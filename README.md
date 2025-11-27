@@ -1,12 +1,11 @@
 # Django Issue Capture
 
-AI-powered GitHub issue creation and management system for Django with conversational UX and LLM enhancement.
+AI-powered GitHub issue creation and management system for Django with LLM enhancement.
 
 ## Features
 
 - **AI-Powered Issue Generation**: Use LiteLLM to generate comprehensive issues from basic descriptions
 - **Model Optionality**: Support for OpenAI, Anthropic, Ollama, and any LiteLLM-compatible provider
-- **Conversational UI**: Chat-based interface for gathering issue context
 - **GitHub Integration**: Direct promotion of issues to GitHub repositories
 - **Template System**: Predefined templates for bugs, features, tasks, and enhancements
 - **HTMX Admin**: Interactive admin interface with one-click GitHub promotion
@@ -86,10 +85,58 @@ Supports any LiteLLM-compatible model:
 
 ### GitHub Integration
 
-Requires a Personal Access Token with `repo` scope:
-1. Go to GitHub Settings → Developer settings → Personal access tokens
-2. Generate new token with `repo` scope
-3. Add to **Issue Capture Settings** in Django admin
+To promote issues to GitHub, you need a Personal Access Token (PAT) with the appropriate permissions.
+
+#### Creating a Personal Access Token
+
+**Option 1: Fine-grained token (Recommended)**
+
+Fine-grained tokens provide more granular control and are GitHub's recommended approach:
+
+1. Go to [GitHub Settings](https://github.com/settings/profile)
+2. Click **Developer settings** (bottom of left sidebar)
+3. Click **Personal access tokens** → **Fine-grained tokens**
+4. Click **Generate new token**
+5. Configure the token:
+   - **Token name**: e.g., "Django Issue Capture"
+   - **Expiration**: Choose based on your security requirements
+   - **Repository access**: Select "Only select repositories" and choose the target repo(s)
+   - **Permissions**: Under "Repository permissions", set:
+     - **Issues**: Read and write (required to create issues)
+     - **Metadata**: Read-only (automatically selected)
+6. Click **Generate token**
+7. Copy the token immediately (it won't be shown again)
+
+**Option 2: Classic token**
+
+Classic tokens are simpler but have broader access:
+
+1. Go to [GitHub Settings](https://github.com/settings/profile)
+2. Click **Developer settings** (bottom of left sidebar)
+3. Click **Personal access tokens** → **Tokens (classic)**
+4. Click **Generate new token** → **Generate new token (classic)**
+5. Configure the token:
+   - **Note**: e.g., "Django Issue Capture"
+   - **Expiration**: Choose based on your security requirements
+   - **Scopes**: Select `repo` (grants full control of private repositories, including issues)
+6. Click **Generate token**
+7. Copy the token immediately (it won't be shown again)
+
+#### Required Permissions
+
+| Permission | Type | Purpose |
+|------------|------|---------|
+| Issues | Read and write | Create and manage issues in the repository |
+| Metadata | Read-only | Access repository metadata (auto-included) |
+
+> **Note**: Classic tokens with `repo` scope grant broader access than needed. For production use, fine-grained tokens with minimal permissions are recommended.
+
+#### Adding the Token to Django
+
+1. Navigate to Django Admin → **Issue Capture Settings**
+2. Enter your GitHub repository in the format `owner/repo` (e.g., `octocat/hello-world`)
+3. Paste your Personal Access Token in the **GitHub API key** field
+4. Save the settings
 
 ### Environment Variables (Production)
 
@@ -110,9 +157,8 @@ ISSUE_CAPTURE_GITHUB_API_KEY = os.getenv("GITHUB_API_KEY")
 
 1. Navigate to `/issues/create/`
 2. Choose creation mode:
-   - **Standard Form**: Manual entry
-   - **AI Quick Generate**: One-shot AI enhancement
-   - **AI Chat**: Conversational context gathering
+   - **Standard Form**: Manual entry with all fields
+   - **AI Quick Generate**: One-shot AI enhancement from basic input
 
 ### Promote to GitHub
 
@@ -126,7 +172,6 @@ The Django admin provides:
 - Issue management with status tracking
 - One-click GitHub promotion (HTMX-powered)
 - Template configuration
-- Conversation history viewing
 
 ## Development
 

@@ -5,7 +5,7 @@ from django.urls import path, reverse
 from django.utils.html import format_html
 from solo.admin import SingletonModelAdmin
 
-from .models import Issue, IssueCaptureSettings, IssueConversation, IssueTemplate
+from .models import Issue, IssueCaptureSettings, IssueTemplate
 from .services import GitHubError, GitHubService
 
 
@@ -153,7 +153,6 @@ class IssueTemplateAdmin(admin.ModelAdmin):
         "name",
         "is_active",
         "required_context_count",
-        "max_conversation_turns",
         "created_at",
     ]
     list_filter = ["is_active", "name", "created_at"]
@@ -161,11 +160,8 @@ class IssueTemplateAdmin(admin.ModelAdmin):
 
     fieldsets = [
         ("Basic Information", {"fields": ["name", "display_name", "description", "is_active"]}),
-        ("Conversation Settings", {"fields": ["discovery_questions", "required_context", "max_conversation_turns"]}),
-        (
-            "LLM Prompts",
-            {"fields": ["discovery_prompt", "generation_prompt", "quick_enhancement_prompt"], "classes": ["collapse"]},
-        ),
+        ("Context Settings", {"fields": ["required_context"]}),
+        ("LLM Generation", {"fields": ["generation_prompt"], "classes": ["collapse"]}),
         ("GitHub Integration", {"fields": ["default_labels"]}),
     ]
 
@@ -174,68 +170,3 @@ class IssueTemplateAdmin(admin.ModelAdmin):
         return obj.required_context_count
 
     required_context_count.short_description = "Required Context Fields"
-
-
-@admin.register(IssueConversation)
-class IssueConversationAdmin(admin.ModelAdmin):
-    """Admin interface for managing issue conversations."""
-
-    list_display = [
-        "conversation_id",
-        "template",
-        "conversation_state",
-        "turns_count",
-        "ready_for_generation",
-        "created_by",
-        "created_at",
-    ]
-    list_filter = ["conversation_state", "ready_for_generation", "user_abandoned", "template", "created_at"]
-    search_fields = ["conversation_id", "initial_description", "created_by__username"]
-    readonly_fields = [
-        "conversation_id",
-        "turns_count",
-        "created_at",
-        "updated_at",
-        "last_activity_at",
-        "context_completeness",
-        "messages_preview",
-    ]
-
-    fieldsets = [
-        ("Conversation Info", {"fields": ["conversation_id", "template", "conversation_state", "created_by"]}),
-        ("Progress", {"fields": ["turns_count", "ready_for_generation", "user_abandoned", "context_completeness"]}),
-        (
-            "Content",
-            {"fields": ["initial_description", "messages_preview", "context_gathered"], "classes": ["collapse"]},
-        ),
-        (
-            "Generated Content",
-            {
-                "fields": ["generated_title", "generated_description", "generated_labels", "confidence_score"],
-                "classes": ["collapse"],
-            },
-        ),
-        ("Timestamps", {"fields": ["created_at", "updated_at", "last_activity_at"]}),
-    ]
-
-    def context_completeness(self, obj):
-        """Display context completeness as percentage."""
-        completeness = obj.get_context_completeness()
-        return f"{completeness:.1%}"
-
-    context_completeness.short_description = "Context Complete"
-
-    def messages_preview(self, obj):
-        """Display a preview of the conversation messages."""
-        if not obj.messages:
-            return "No messages"
-
-        preview_lines = []
-        for msg in obj.messages[-3:]:  # Show last 3 messages
-            role = msg.get("role", "unknown")
-            content = msg.get("content", "")[:100]  # Truncate long messages
-            preview_lines.append(f"{role}: {content}...")
-
-        return format_html("<br>".join(preview_lines))
-
-    messages_preview.short_description = "Recent Messages"

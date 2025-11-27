@@ -58,6 +58,10 @@ staticfiles/
 # Test database
 tests/test_db.sqlite3
 
+# Development server
+.server.pid
+.server.log
+
 # Ruff
 .ruff_cache/
 

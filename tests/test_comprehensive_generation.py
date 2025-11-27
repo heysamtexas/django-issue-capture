@@ -120,7 +120,6 @@ Follow existing code style in the repository.""",
         self.assertIsInstance(issue, Issue)
         self.assertEqual(issue.title, "Test Issue")
         self.assertEqual(issue.creation_mode, "ai_generated")
-        self.assertFalse(issue.has_llm_conversation)  # No conversation for single-shot
         self.assertEqual(issue.llm_confidence_score, 0.8)  # Default value
         self.assertIn("## Description", issue.description)
         self.assertIn("## Acceptance Criteria", issue.description)

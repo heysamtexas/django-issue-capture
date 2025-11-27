@@ -1,5 +1,9 @@
 """Test settings for django-issue-capture."""
 
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
 SECRET_KEY = "test-secret-key-for-django-issue-capture"
 
 DEBUG = True
@@ -51,7 +55,7 @@ TEMPLATES = [
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": ":memory:",
+        "NAME": BASE_DIR / "test_db.sqlite3",
     }
 }
 

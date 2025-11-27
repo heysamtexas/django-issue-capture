@@ -7,7 +7,7 @@ from solo.models import SingletonModel
 
 
 class IssueTemplate(models.Model):
-    """Template for different types of issues with specific discovery questions."""
+    """Template for different types of issues with AI generation prompts."""
 
     TEMPLATE_CHOICES = [
         ("bug", "Bug Report"),
@@ -21,28 +21,14 @@ class IssueTemplate(models.Model):
     display_name = models.CharField(max_length=100, help_text="Human-friendly name")
     description = models.TextField(help_text="Description of when to use this template")
 
-    # Discovery questions for conversation
-    discovery_questions = models.JSONField(
-        default=list, help_text="List of questions to ask during conversation to gather context"
-    )
-
-    # Required context fields
+    # Required context fields (for reference in generation)
     required_context = models.JSONField(
         default=list,
-        help_text="List of context fields that should be gathered (e.g., 'steps_to_reproduce', 'expected_behavior')",
+        help_text="List of context fields to include in generated issues (e.g., 'steps_to_reproduce', 'expected_behavior')",
     )
 
-    # Conversation settings
-    max_conversation_turns = models.PositiveIntegerField(
-        default=10, help_text="Maximum number of conversation turns before auto-generating issue"
-    )
-
-    # LLM prompts
-    discovery_prompt = models.TextField(help_text="System prompt for conducting discovery conversation")
-    generation_prompt = models.TextField(help_text="System prompt for generating final issue from conversation context")
-
-    # Enhancement prompt for quick mode
-    quick_enhancement_prompt = models.TextField(help_text="Prompt for quick one-shot enhancement without conversation")
+    # LLM generation prompt
+    generation_prompt = models.TextField(help_text="System prompt for AI-powered issue generation")
 
     # Default GitHub labels
     default_labels = models.CharField(
@@ -67,108 +53,6 @@ class IssueTemplate(models.Model):
     def required_context_count(self) -> int:
         """Return the number of required context fields."""
         return len(self.required_context) if self.required_context else 0
-
-
-class IssueConversation(models.Model):
-    """Stores conversation history and context for LLM-assisted issue creation."""
-
-    CONVERSATION_STATE_CHOICES = [
-        ("discovering", "Discovering Context"),
-        ("clarifying", "Clarifying Details"),
-        ("summarizing", "Summarizing Information"),
-        ("ready", "Ready for Generation"),
-        ("complete", "Conversation Complete"),
-    ]
-
-    # Core relationships
-    template = models.ForeignKey(
-        IssueTemplate,
-        on_delete=models.CASCADE,
-        related_name="conversations",
-        help_text="Template being used for this conversation",
-    )
-
-    # Conversation state
-    conversation_state = models.CharField(max_length=20, choices=CONVERSATION_STATE_CHOICES, default="discovering")
-    conversation_id = ShortUUIDField(unique=True, editable=False, help_text="Unique identifier for this conversation")
-
-    # Messages and context
-    messages = models.JSONField(
-        default=list, help_text="List of conversation messages with role (user/assistant) and content"
-    )
-    context_gathered = models.JSONField(default=dict, help_text="Extracted context information organized by type")
-    initial_description = models.TextField(help_text="User's initial description that started the conversation")
-
-    # Conversation metadata
-    turns_count = models.PositiveIntegerField(default=0, help_text="Number of conversation turns completed")
-    ready_for_generation = models.BooleanField(
-        default=False, help_text="Whether conversation has gathered enough context for issue generation"
-    )
-    user_abandoned = models.BooleanField(
-        default=False, help_text="Whether user abandoned the conversation before completion"
-    )
-
-    # User info
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="issue_conversations",
-        help_text="User who started this conversation",
-    )
-
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    last_activity_at = models.DateTimeField(auto_now=True)
-
-    # Generated content
-    generated_title = models.CharField(max_length=200, blank=True)
-    generated_description = models.TextField(blank=True)
-    generated_labels = models.CharField(max_length=200, blank=True)
-    confidence_score = models.FloatField(
-        null=True, blank=True, help_text="AI confidence in the generated content (0.0 to 1.0)"
-    )
-
-    class Meta:
-        verbose_name = "Issue Conversation"
-        verbose_name_plural = "Issue Conversations"
-        ordering = ["-created_at"]
-
-    def __str__(self) -> str:
-        """Return string representation of the conversation."""
-        return f"Conversation {self.conversation_id} ({self.template.display_name})"
-
-    @property
-    def is_active(self) -> bool:
-        """Return True if conversation is still active (not complete or abandoned)."""
-        return self.conversation_state not in ["complete"] and not self.user_abandoned
-
-    @property
-    def can_generate_issue(self) -> bool:
-        """Return True if conversation has enough context to generate an issue."""
-        return self.ready_for_generation and self.conversation_state in ["ready", "complete"]
-
-    def add_message(self, role: str, content: str) -> None:
-        """Add a new message to the conversation."""
-        if not self.messages:
-            self.messages = []
-
-        self.messages.append(
-            {"role": role, "content": content, "timestamp": self.updated_at.isoformat() if self.updated_at else None}
-        )
-
-        if role == "user":
-            self.turns_count += 1
-
-    def get_context_completeness(self) -> float:
-        """Calculate how much of the required context has been gathered."""
-        if not self.template.required_context:
-            return 1.0
-
-        gathered = len([key for key in self.template.required_context if self.context_gathered.get(key)])
-        total = len(self.template.required_context)
-
-        return gathered / total if total > 0 else 1.0
 
 
 class Issue(models.Model):
@@ -231,12 +115,11 @@ class Issue(models.Model):
     # Issue creation mode and template
     CREATION_MODE_CHOICES = [
         ("form", "Standard Form"),
-        ("chat", "AI Conversation"),
-        ("quick", "Quick AI Enhancement"),
+        ("ai_generated", "AI Generated"),
     ]
 
     creation_mode = models.CharField(
-        max_length=10, choices=CREATION_MODE_CHOICES, default="form", help_text="How this issue was created"
+        max_length=15, choices=CREATION_MODE_CHOICES, default="form", help_text="How this issue was created"
     )
     template = models.ForeignKey(
         IssueTemplate,
@@ -247,25 +130,9 @@ class Issue(models.Model):
         help_text="Template used for this issue (if any)",
     )
 
-    # Conversation relationship
-    conversation = models.OneToOneField(
-        IssueConversation,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="created_issue",
-        help_text="Conversation that led to this issue (if created via chat)",
-    )
-
-    # LLM conversation tracking
-    has_llm_conversation = models.BooleanField(
-        default=False, help_text="Whether this issue was created through LLM conversation"
-    )
+    # LLM confidence tracking
     llm_confidence_score = models.FloatField(
         null=True, blank=True, help_text="AI confidence score in the generated content (0.0 to 1.0)"
-    )
-    conversation_summary = models.TextField(
-        blank=True, default="", help_text="Summary of key insights from the conversation"
     )
 
     # GitHub promotion tracking

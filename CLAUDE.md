@@ -4,12 +4,12 @@ This file provides guidance to Claude Code when working with the `django-issue-c
 
 ## Project Overview
 
-**Django Issue Capture** is a standalone Django package providing AI-powered GitHub issue creation and management with conversational UX, LLM enhancement via LiteLLM, and direct GitHub integration.
+**Django Issue Capture** is a standalone Django package providing AI-powered GitHub issue creation and management with LLM enhancement via LiteLLM and direct GitHub integration.
 
 **Key Features**:
 - AI-powered issue generation with model optionality (LiteLLM)
 - Self-contained LLM configuration via Django Solo
-- Conversational and quick-generation workflows
+- Single-shot AI generation workflow (quick and efficient)
 - GitHub API integration for issue promotion
 - Template system for different issue types
 - HTMX-powered admin interface
@@ -22,16 +22,16 @@ django-issue-capture/
 ├── src/django_issue_capture/
 │   ├── __init__.py (version export)
 │   ├── apps.py (app label: django_issue_capture)
-│   ├── models.py (4 models + merged LLM settings)
+│   ├── models.py (3 models: Issue, IssueTemplate, IssueCaptureSettings)
 │   ├── admin.py (HTMX admin with promotion)
-│   ├── views.py (8 views)
+│   ├── views.py (5 views)
 │   ├── urls.py
 │   ├── services.py (GitHub API)
 │   ├── llm_service.py (LiteLLM integration)
 │   ├── context_processors.py
 │   ├── management/commands/setup_issue_templates.py
-│   ├── templates/django_issue_capture/ (14 templates)
-│   └── migrations/ (clean table names)
+│   ├── templates/django_issue_capture/ (9 templates)
+│   └── migrations/
 ├── tests/
 │   ├── settings.py (standalone test config)
 │   ├── manage.py
@@ -73,7 +73,6 @@ class IssueCaptureConfig(AppConfig):
 **Result**: Clean table names without `db_table` overrides:
 - `django_issue_capture_issue`
 - `django_issue_capture_issuetemplate`
-- `django_issue_capture_issueconversation`
 - `django_issue_capture_issuecapturesettings`
 
 ### Self-Contained LLM Configuration
@@ -219,20 +218,13 @@ IssueCaptureSettings (Singleton)
     └─> Configuration for GitHub + LLM
 
 IssueTemplate
-    ├─> IssueConversation (FK)
     └─> Issue (FK)
-
-IssueConversation
-    ├─> IssueTemplate (FK)
-    ├─> User (FK - created_by)
-    └─> Issue (OneToOne - created_issue)
 
 Issue
     ├─> User (FK - reported_by)
     ├─> User (FK - assigned_to)
     ├─> User (FK - github_promoted_by)
-    ├─> IssueTemplate (FK)
-    └─> IssueConversation (OneToOne)
+    └─> IssueTemplate (FK)
 ```
 
 ## Dependencies

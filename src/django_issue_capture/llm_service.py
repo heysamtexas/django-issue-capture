@@ -162,7 +162,6 @@ class IssueLLMService:
             reported_by=user,
             creation_mode="ai_generated",
             template=template,
-            has_llm_conversation=False,  # No conversation for single-shot
             llm_confidence_score=0.8,  # Default confidence
         )
 
@@ -183,21 +182,6 @@ class IssueLLMService:
         """
         # Redirect to comprehensive generation - they're now the same approach
         return self.generate_comprehensive_issue(title=title, description=description, template_name=template_name)
-
-    def _get_default_discovery_prompt(self) -> str:
-        """Get default discovery prompt."""
-        return """
-        You are an expert technical issue analyst helping users create comprehensive issue reports.
-        Ask targeted, specific questions to gather the information needed to create actionable issues.
-
-        Focus on:
-        - Specific symptoms and behaviors
-        - Reproduction steps
-        - Expected vs actual results
-        - Context and environment details
-
-        Keep questions focused and avoid asking for information already provided.
-        """
 
     def _get_default_generation_prompt(self) -> str:
         """Get default generation prompt."""

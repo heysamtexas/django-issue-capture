@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 
 from .llm_service import IssueLLMService
-from .models import Issue, IssueConversation, IssueTemplate
+from .models import Issue, IssueTemplate
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +74,6 @@ def create_issue(request: HttpRequest) -> HttpResponse:
     implementation_hints = request.POST.get("implementation_hints", "")
     estimated_complexity = request.POST.get("estimated_complexity", "")
     suggested_labels = request.POST.get("suggested_labels", "")
-    has_llm_conversation = request.POST.get("has_llm_conversation", "false").lower() == "true"
 
     # Get template if specified
     template = None
@@ -93,7 +92,6 @@ def create_issue(request: HttpRequest) -> HttpResponse:
         user_agent=request.META.get("HTTP_USER_AGENT", ""),
         creation_mode=creation_mode,
         template=template,
-        has_llm_conversation=has_llm_conversation,
         acceptance_criteria=acceptance_criteria,
         technical_specifications=technical_specifications,
         implementation_hints=implementation_hints,
@@ -142,142 +140,6 @@ def issue_list(request: HttpRequest) -> HttpResponse:
             "status_choices": Issue.STATUS_CHOICES,
         },
     )
-
-
-# Chat-based issue creation views
-
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def chat_create_issue(request: HttpRequest) -> HttpResponse:  # noqa: PLR0911
-    """Start or show the chat interface for creating issues."""
-    if not _check_staff_permissions(request.user):
-        return HttpResponse(status=403)
-
-    if request.method == "GET":
-        # Show template selection or return to existing conversation
-        conversation_id = request.GET.get("conversation_id")
-
-        if conversation_id:
-            # Resume existing conversation
-            try:
-                conversation = IssueConversation.objects.get(conversation_id=conversation_id, created_by=request.user)
-                if conversation.is_active:
-                    return render(
-                        request,
-                        "django_issue_capture/chat_interface.html",
-                        {"conversation": conversation, "templates": IssueTemplate.objects.filter(is_active=True)},
-                    )
-                # Conversation is complete, show result
-                return render(request, "django_issue_capture/chat_complete.html", {"conversation": conversation})
-            except IssueConversation.DoesNotExist:
-                pass
-
-        # Show template selection
-        templates = IssueTemplate.objects.filter(is_active=True)
-        return render(request, "django_issue_capture/template_selection.html", {"templates": templates})
-
-    # POST - Start new conversation
-    template_name = request.POST.get("template", "bug")
-    initial_description = request.POST.get("description", "").strip()
-    reported_url = request.POST.get("reported_url", "")
-
-    if not initial_description:
-        templates = IssueTemplate.objects.filter(is_active=True)
-        return render(
-            request,
-            "django_issue_capture/template_selection.html",
-            {"templates": templates, "error": "Please provide an initial description of the issue."},
-        )
-
-    try:
-        llm_service = IssueLLMService()
-        conversation = llm_service.start_conversation(
-            user=request.user,
-            initial_description=initial_description,
-            template_name=template_name,
-            reported_url=reported_url,
-        )
-
-        return render(
-            request,
-            "django_issue_capture/chat_interface.html",
-            {"conversation": conversation, "templates": IssueTemplate.objects.filter(is_active=True)},
-        )
-
-    except Exception as e:
-        logger.exception("Error starting conversation")
-        templates = IssueTemplate.objects.filter(is_active=True)
-        return render(
-            request,
-            "django_issue_capture/template_selection.html",
-            {"templates": templates, "error": f"Failed to start conversation: {e!s}"},
-        )
-
-
-@login_required
-@require_http_methods(["POST"])
-def chat_send_message(request: HttpRequest, conversation_id: str) -> HttpResponse:
-    """Send a message in the chat conversation."""
-    if not _check_staff_permissions(request.user):
-        return HttpResponse(status=403)
-
-    try:
-        conversation = get_object_or_404(IssueConversation, conversation_id=conversation_id, created_by=request.user)
-
-        if not conversation.is_active:
-            return JsonResponse({"error": "Conversation is not active"}, status=400)
-
-        user_message = request.POST.get("message", "").strip()
-        if not user_message:
-            return JsonResponse({"error": "Message cannot be empty"}, status=400)
-
-        llm_service = IssueLLMService()
-        assistant_response = llm_service.process_message(conversation, user_message)
-
-        # Return the new messages as HTML
-        return render(
-            request,
-            "django_issue_capture/_chat_messages.html",
-            {
-                "conversation": conversation,
-                "new_messages": [
-                    {"role": "user", "content": user_message},
-                    {"role": "assistant", "content": assistant_response},
-                ],
-            },
-        )
-
-    except Exception:
-        logger.exception("Error processing message")
-        return JsonResponse({"error": "Failed to process message"}, status=500)
-
-
-@login_required
-@require_http_methods(["POST"])
-def chat_generate_issue(request: HttpRequest, conversation_id: str) -> HttpResponse:
-    """Generate an issue from the conversation."""
-    if not _check_staff_permissions(request.user):
-        return HttpResponse(status=403)
-
-    try:
-        conversation = get_object_or_404(IssueConversation, conversation_id=conversation_id, created_by=request.user)
-
-        if not conversation.can_generate_issue:
-            return JsonResponse({"error": "Not enough context to generate issue"}, status=400)
-
-        llm_service = IssueLLMService()
-        issue = llm_service.generate_issue(
-            conversation=conversation, user=request.user, reported_url=request.POST.get("reported_url", "")
-        )
-
-        return render(
-            request, "django_issue_capture/chat_issue_generated.html", {"issue": issue, "conversation": conversation}
-        )
-
-    except Exception as e:
-        logger.exception("Error generating issue")
-        return JsonResponse({"error": f"Failed to generate issue: {e!s}"}, status=500)
 
 
 @login_required
@@ -342,14 +204,3 @@ def quick_enhance_issue(request: HttpRequest) -> HttpResponse:
 
     # Redirect to the new comprehensive generation
     return generate_comprehensive_issue(request)
-
-
-@login_required
-def conversation_detail(request: HttpRequest, conversation_id: str) -> HttpResponse:
-    """View details of a conversation."""
-    if not _check_staff_permissions(request.user):
-        return HttpResponse(status=403)
-
-    conversation = get_object_or_404(IssueConversation, conversation_id=conversation_id, created_by=request.user)
-
-    return render(request, "django_issue_capture/conversation_detail.html", {"conversation": conversation})
