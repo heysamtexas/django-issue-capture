@@ -4,10 +4,10 @@
         <input type="checkbox" name="_selected_action" value="{{ issue.pk }}" class="action-select">
     </td>
     <td class="nowrap">
-        <a href="{% url 'admin:issue_capture_issue_change' issue.pk %}">{{ issue.short_uuid }}</a>
+        <a href="{% url 'admin:django_issue_capture_issue_change' issue.pk %}">{{ issue.short_uuid }}</a>
     </td>
     <td class="nowrap">
-        <a href="{% url 'admin:issue_capture_issue_change' issue.pk %}">{{ issue.title }}</a>
+        <a href="{% url 'admin:django_issue_capture_issue_change' issue.pk %}">{{ issue.title }}</a>
     </td>
     <td class="nowrap">{{ issue.get_status_display }}</td>
     <td class="nowrap">{{ issue.get_priority_display }}</td>
@@ -18,7 +18,7 @@
             <a href="{{ issue.github_url }}" target="_blank" class="button" style="background-color: #28a745; color: white; text-decoration: none; padding: 4px 8px; border-radius: 3px; font-size: 11px;">GitHub #{{ issue.github_issue_number }}</a>
         {% else %}
             <button
-                hx-post="{% url 'admin:issue_capture_issue_promote' issue.pk %}"
+                hx-post="{% url 'admin:django_issue_capture_issue_promote' issue.pk %}"
                 hx-target="closest tr"
                 hx-swap="outerHTML"
                 hx-include="[name=csrfmiddlewaretoken]"

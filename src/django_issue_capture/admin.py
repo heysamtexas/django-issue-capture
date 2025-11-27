@@ -62,7 +62,7 @@ class IssueAdmin(admin.ModelAdmin):
                 obj.github_url,
                 obj.github_issue_number,
             )
-        promote_url = reverse("admin:issue_capture_issue_promote", args=[obj.pk])
+        promote_url = reverse("admin:django_issue_capture_issue_promote", args=[obj.pk])
         return format_html(
             "<button "
             'hx-post="{}" '
@@ -83,7 +83,7 @@ class IssueAdmin(admin.ModelAdmin):
         """Add custom URLs for HTMX endpoints."""
         urls = super().get_urls()
         custom_urls = [
-            path("<int:issue_id>/promote/", self.promote_issue_view, name="issue_capture_issue_promote"),
+            path("<int:issue_id>/promote/", self.promote_issue_view, name="django_issue_capture_issue_promote"),
         ]
         return custom_urls + urls
 
@@ -105,7 +105,7 @@ class IssueAdmin(admin.ModelAdmin):
             issue.refresh_from_db()
 
             # Return updated table row
-            return render(request, "issue_capture/admin_row_update.html", {"issue": issue})
+            return render(request, "django_issue_capture/admin_row_update.html", {"issue": issue})
 
         except GitHubError as e:
             return HttpResponse(f'<div class="alert alert-danger">GitHub Error: {e!s}</div>', status=400)
