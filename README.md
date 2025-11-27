@@ -218,6 +218,10 @@ Contributions welcome! Please:
 4. Ensure all tests pass
 5. Submit a pull request
 
+## Releasing
+
+See [RELEASING.md](./RELEASING.md) for instructions on publishing new versions to PyPI.
+
 ## Support
 
 - **Issues**: https://github.com/directory-platform/django-issue-capture/issues

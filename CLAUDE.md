@@ -342,12 +342,12 @@ python manage.py setup_issue_templates  # Initialize templates
 
 ## Publishing to PyPI
 
-Follow the same pattern as `django-seo-audit`:
+See [RELEASING.md](./RELEASING.md) for the complete release process.
 
-1. Update version in `pyproject.toml` and `__init__.py`
-2. Run pre-release checks: `make check && make test`
-3. Commit and push: `git commit -m "Bump version to X.Y.Z"`
+Quick reference:
+1. Run checks: `make check && make test`
+2. Bump version in `pyproject.toml` and `__init__.py`
+3. Commit and push
 4. Create release: `gh release create vX.Y.Z`
-5. GitHub Actions will automatically publish to PyPI
 
-See django-seo-audit/CLAUDE.md for detailed publishing instructions.
+Use `/publish` command to execute this workflow.
