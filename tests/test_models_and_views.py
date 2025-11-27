@@ -1,8 +1,9 @@
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
-from django_issue_capture.models import Issue
+from django_issue_capture.models import Issue, IssueCaptureSettings
 
 
 class IssueModelTest(TestCase):
@@ -101,3 +102,30 @@ class IssueViewTest(TestCase):
         self.client.login(username="staffuser", password="staffpass123")
         response = self.client.get(reverse("django_issue_capture:list"))
         self.assertEqual(response.status_code, 200)
+
+
+class IssueCaptureSettingsValidationTest(TestCase):
+    """Tests for IssueCaptureSettings validation"""
+
+    def test_github_token_accepts_classic_token(self):
+        """Test that classic ghp_ tokens are accepted"""
+        settings = IssueCaptureSettings.get_solo()
+        settings.github_repo = "owner/repo"
+        settings.github_api_key = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        settings.full_clean()  # Should not raise
+
+    def test_github_token_accepts_fine_grained_token(self):
+        """Test that fine-grained github_pat_ tokens are accepted"""
+        settings = IssueCaptureSettings.get_solo()
+        settings.github_repo = "owner/repo"
+        settings.github_api_key = "github_pat_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        settings.full_clean()  # Should not raise
+
+    def test_github_token_rejects_invalid_prefix(self):
+        """Test that tokens with invalid prefixes are rejected"""
+        settings = IssueCaptureSettings.get_solo()
+        settings.github_repo = "owner/repo"
+        settings.github_api_key = "invalid_token_xxxxxxxxxxxxxxx"
+        with self.assertRaises(ValidationError) as ctx:
+            settings.full_clean()
+        self.assertIn("github_api_key", ctx.exception.message_dict)

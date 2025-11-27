@@ -22,8 +22,10 @@ class IssueLLMService:
         self.settings = IssueCaptureSettings.get_solo()
 
         # Validate LLM is configured
-        if not self.settings.llm_enabled:
-            raise ValueError("LLM is disabled in Issue Capture Settings. Please enable it in Django admin.")
+        if not self.settings.show_ai_interface:
+            raise ValueError(
+                "AI interface is disabled in Issue Capture Settings. Enable 'Show AI Interface' in Django admin."
+            )
 
         if not self.settings.llm_api_key:
             raise ValueError(
@@ -104,13 +106,17 @@ class IssueLLMService:
 
         # Use litellm for API call
         try:
-            response = completion(
-                api_key=self.api_key,
-                model=self.llm_model,
-                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-            )
+            completion_kwargs = {
+                "api_key": self.api_key,
+                "model": self.llm_model,
+                "messages": [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+                "max_tokens": self.max_tokens,
+            }
+            # Only pass temperature if explicitly set (let provider use its default otherwise)
+            if self.temperature is not None:
+                completion_kwargs["temperature"] = self.temperature
+
+            response = completion(**completion_kwargs)
 
             markdown_content = response.choices[0].message.content
 

@@ -46,7 +46,6 @@
                                         <th>Priority</th>
                                         <th>Reported By</th>
                                         <th>Created</th>
-                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -54,8 +53,18 @@
                                     <tr>
                                         <td>
                                             <div>
-                                                <strong>#{{ issue.short_uuid }}</strong>
-                                                <div class="text-muted small">{{ issue.title|truncatechars:50 }}</div>
+                                                <a href="{{ issue.get_absolute_url }}" class="text-decoration-none">
+                                                    <strong>#{{ issue.short_uuid }}</strong>
+                                                </a>
+                                                {% if issue.reported_url %}
+                                                <div class="small">
+                                                    <a href="{{ issue.reported_url }}" target="_blank" class="text-secondary text-decoration-none">
+                                                        <i class="bi bi-link-45deg"></i>
+                                                        {{ issue.reported_url|truncatechars:50 }}
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                                <div class="text-muted small">{{ issue.title|truncatechars:60 }}</div>
                                             </div>
                                         </td>
                                         <td>
@@ -71,18 +80,6 @@
                                         <td>{{ issue.reported_by.get_full_name|default:issue.reported_by.username }}</td>
                                         <td>
                                             <small>{{ issue.created_at|date:"M j, Y" }}</small>
-                                        </td>
-                                        <td>
-                                            <a href="{{ issue.get_absolute_url }}" class="btn btn-sm btn-outline-primary">
-                                                <i class="bi bi-eye me-1"></i>
-                                                View
-                                            </a>
-                                            {% if issue.reported_url %}
-                                            <a href="{{ issue.reported_url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                                                <i class="bi bi-link-45deg me-1"></i>
-                                                Page
-                                            </a>
-                                            {% endif %}
                                         </td>
                                     </tr>
                                     {% endfor %}

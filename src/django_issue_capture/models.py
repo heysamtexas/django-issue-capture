@@ -201,11 +201,21 @@ class IssueCaptureSettings(SingletonModel):
     llm_model = models.CharField(
         max_length=100,
         default="gpt-4o-mini",
-        help_text="LLM model identifier (e.g., gpt-4o-mini, claude-3-5-sonnet-20241022, ollama/llama3)",
+        help_text=(
+            "LiteLLM model identifier. Format: provider/model-name. "
+            "Examples: gpt-4o-mini (OpenAI), anthropic/claude-3-5-sonnet-20241022, ollama_chat/llama3"
+        ),
     )
-    llm_enabled = models.BooleanField(default=True, help_text="Enable LLM-powered issue enhancement and generation")
+    show_ai_interface = models.BooleanField(default=True, help_text="Show AI Generate tab in issue creation interface")
     llm_temperature = models.FloatField(
-        default=0.7, help_text="Temperature for LLM generation (0.0-1.0, higher = more creative)"
+        null=True,
+        blank=True,
+        default=None,
+        help_text=(
+            "Leave blank to use provider's default. "
+            "If set: 0.0 = deterministic, higher = more creative. "
+            "Note: Anthropic range is 0-1, OpenAI range is 0-2."
+        ),
     )
     llm_max_tokens = models.PositiveIntegerField(
         default=2000, help_text="Maximum tokens for LLM generation (higher = longer responses)"
@@ -226,14 +236,15 @@ class IssueCaptureSettings(SingletonModel):
                 raise ValidationError(
                     {"github_api_key": "GitHub API key appears to be too short. Please check your token."}
                 )
-            if not self.github_api_key.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_")):
+            if not self.github_api_key.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_")):
                 raise ValidationError(
-                    {"github_api_key": "GitHub API key should start with ghp_, gho_, ghu_, ghs_, or ghr_"}
+                    {"github_api_key": "GitHub API key should start with ghp_, gho_, ghu_, ghs_, ghr_, or github_pat_"}
                 )
 
-        # Validate LLM temperature range
-        if not 0.0 <= self.llm_temperature <= 1.0:
-            raise ValidationError({"llm_temperature": "Temperature must be between 0.0 and 1.0"})
+        # Validate LLM temperature range (if set)
+        if self.llm_temperature is not None:
+            if self.llm_temperature < 0.0 or self.llm_temperature > 2.0:
+                raise ValidationError({"llm_temperature": "Temperature must be between 0.0 and 2.0"})
 
         # Validate LLM max tokens
         if self.llm_max_tokens < 100 or self.llm_max_tokens > 10000:
@@ -242,3 +253,13 @@ class IssueCaptureSettings(SingletonModel):
     def __str__(self):
         """Return string representation of issue capture settings."""
         return "Issue Capture Settings"
+
+    @property
+    def llm_configuration_errors(self) -> list[str]:
+        """Return list of LLM configuration errors, empty if properly configured."""
+        errors = []
+        if not self.llm_api_key:
+            errors.append("API key required. Configure in Django Admin → Issue Capture Settings.")
+        if not self.llm_model:
+            errors.append("LLM model required. Configure in Django Admin → Issue Capture Settings.")
+        return errors

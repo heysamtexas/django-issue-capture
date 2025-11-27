@@ -19,6 +19,9 @@
 <!-- Container for the issue form -->
 <div id="issue-capture-container"></div>
 
+<!-- Toast container for notifications -->
+<div id="issue-toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+
 <!-- GitHub-style positioning fix for mobile -->
 <style>
 @media (max-width: 768px) {
@@ -57,6 +60,15 @@
     z-index: -1;
 }
 </style>
+
+<script>
+document.body.addEventListener('htmx:oobAfterSwap', function(e) {
+    if (e.detail.target.id === 'issue-toast-container') {
+        var toast = e.detail.target.querySelector('.toast');
+        if (toast) new bootstrap.Toast(toast).show();
+    }
+});
+</script>
         {% endif %}
     {% endif %}
 {% endif %}

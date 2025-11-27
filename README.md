@@ -64,7 +64,7 @@ python manage.py migrate
 
 Navigate to **Issue Capture Settings** and configure:
 - **GitHub**: Repository (`owner/repo`) and Personal Access Token
-- **LLM**: API key and model (e.g., `gpt-4o-mini`, `claude-3-5-sonnet-20241022`)
+- **LLM**: API key and model (e.g., `gpt-4o-mini`, `anthropic/claude-3-5-sonnet-20241022`)
 
 6. Set up issue templates:
 
@@ -76,12 +76,18 @@ python manage.py setup_issue_templates
 
 ### LLM Models
 
-Supports any LiteLLM-compatible model:
+This package uses [LiteLLM](https://docs.litellm.ai/docs/) for model optionality. Use the format `provider/model-name`:
 
-- **OpenAI**: `gpt-4o-mini`, `gpt-4o`, `gpt-3.5-turbo`
-- **Anthropic**: `claude-3-5-sonnet-20241022`, `claude-3-opus-20240229`
-- **Local**: `ollama/llama3`, `ollama/mistral`
-- **Others**: See [LiteLLM docs](https://docs.litellm.ai/docs/)
+| Provider | Model Format | API Key Prefix |
+|----------|--------------|----------------|
+| OpenAI | `gpt-4o-mini`, `gpt-4o` | `sk-...` |
+| Anthropic | `anthropic/claude-3-5-sonnet-20241022` | `sk-ant-...` |
+| Ollama (local) | `ollama_chat/llama3`, `ollama_chat/mistral` | (none) |
+| Azure OpenAI | `azure/deployment-name` | (Azure key) |
+
+> **Note**: OpenAI models work without a prefix. Most other providers require the `provider/` prefix.
+
+See [LiteLLM providers](https://docs.litellm.ai/docs/providers) for the full list.
 
 ### GitHub Integration
 

@@ -119,6 +119,13 @@ class IssueCaptureSettingsAdmin(SingletonModelAdmin):
     fieldsets = [
         ("Feature Toggle", {"fields": ["enabled"]}),
         (
+            "LLM Configuration",
+            {
+                "fields": ["show_ai_interface", "llm_api_key", "llm_model", "llm_temperature", "llm_max_tokens"],
+                "description": "Configure LLM for AI-powered issue generation",
+            },
+        ),
+        (
             "GitHub Integration",
             {
                 "fields": ["github_repo", "github_api_key", "github_label"],

@@ -91,8 +91,8 @@ class IssueCaptureSettings(SingletonModel):
     # LLM (REQUIRED)
     llm_api_key = CharField(...)
     llm_model = CharField(default="gpt-4o-mini")
-    llm_enabled = BooleanField(default=True)
-    llm_temperature = FloatField(default=0.7)
+    show_ai_interface = BooleanField(default=True)
+    llm_temperature = FloatField(null=True, default=None)
     llm_max_tokens = IntegerField(default=2000)
 ```
 
@@ -105,8 +105,8 @@ class IssueLLMService:
     def __init__(self):
         self.settings = IssueCaptureSettings.get_solo()
 
-        if not self.settings.llm_enabled:
-            raise ValueError("LLM is disabled...")
+        if not self.settings.show_ai_interface:
+            raise ValueError("AI interface is disabled...")
 
         self.api_key = self.settings.llm_api_key
         self.llm_model = self.settings.llm_model
@@ -288,7 +288,7 @@ settings.save()
 
 **"No active API key found":**
 - Configure LLM API key in Django admin (Issue Capture Settings)
-- Ensure `llm_enabled` is True
+- Ensure `show_ai_interface` is True
 
 **"GitHub API authentication failed":**
 - Verify GitHub token has `repo` scope

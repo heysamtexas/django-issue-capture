@@ -4,56 +4,63 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('django_issue_capture', '0001_initial'),
+        ("django_issue_capture", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='issue',
-            name='conversation',
+            model_name="issue",
+            name="conversation",
         ),
         migrations.RemoveField(
-            model_name='issue',
-            name='conversation_summary',
+            model_name="issue",
+            name="conversation_summary",
         ),
         migrations.RemoveField(
-            model_name='issue',
-            name='has_llm_conversation',
+            model_name="issue",
+            name="has_llm_conversation",
         ),
         migrations.RemoveField(
-            model_name='issuetemplate',
-            name='discovery_prompt',
+            model_name="issuetemplate",
+            name="discovery_prompt",
         ),
         migrations.RemoveField(
-            model_name='issuetemplate',
-            name='discovery_questions',
+            model_name="issuetemplate",
+            name="discovery_questions",
         ),
         migrations.RemoveField(
-            model_name='issuetemplate',
-            name='max_conversation_turns',
+            model_name="issuetemplate",
+            name="max_conversation_turns",
         ),
         migrations.RemoveField(
-            model_name='issuetemplate',
-            name='quick_enhancement_prompt',
+            model_name="issuetemplate",
+            name="quick_enhancement_prompt",
         ),
         migrations.AlterField(
-            model_name='issue',
-            name='creation_mode',
-            field=models.CharField(choices=[('form', 'Standard Form'), ('ai_generated', 'AI Generated')], default='form', help_text='How this issue was created', max_length=15),
+            model_name="issue",
+            name="creation_mode",
+            field=models.CharField(
+                choices=[("form", "Standard Form"), ("ai_generated", "AI Generated")],
+                default="form",
+                help_text="How this issue was created",
+                max_length=15,
+            ),
         ),
         migrations.AlterField(
-            model_name='issuetemplate',
-            name='generation_prompt',
-            field=models.TextField(help_text='System prompt for AI-powered issue generation'),
+            model_name="issuetemplate",
+            name="generation_prompt",
+            field=models.TextField(help_text="System prompt for AI-powered issue generation"),
         ),
         migrations.AlterField(
-            model_name='issuetemplate',
-            name='required_context',
-            field=models.JSONField(default=list, help_text="List of context fields to include in generated issues (e.g., 'steps_to_reproduce', 'expected_behavior')"),
+            model_name="issuetemplate",
+            name="required_context",
+            field=models.JSONField(
+                default=list,
+                help_text="List of context fields to include in generated issues (e.g., 'steps_to_reproduce', 'expected_behavior')",
+            ),
         ),
         migrations.DeleteModel(
-            name='IssueConversation',
+            name="IssueConversation",
         ),
     ]

@@ -1,18 +1,15 @@
-<!-- Success Notification -->
-<div class="alert alert-success alert-dismissible fade show" role="alert">
-    <i class="bi bi-check-circle-fill me-2"></i>
-    <strong>Issue Created!</strong>
-    Issue <a href="{{ issue.get_absolute_url }}" class="alert-link">#{{ issue.short_uuid }}</a> has been successfully created.
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
+<!-- Empty content closes the modal (replaces #issue-capture-container) -->
 
-<script>
-// Auto-dismiss after 5 seconds
-setTimeout(function() {
-    const alert = document.querySelector('.alert');
-    if (alert) {
-        const bsAlert = new bootstrap.Alert(alert);
-        bsAlert.close();
-    }
-}, 5000);
-</script>
+<!-- OOB swap injects toast into the toast container -->
+<div id="issue-toast-container" hx-swap-oob="innerHTML">
+    <div class="toast" role="alert" data-bs-autohide="true" data-bs-delay="5000">
+        <div class="toast-header bg-success text-white">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <strong class="me-auto">Issue Created!</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+            Issue <a href="{{ issue.get_absolute_url }}">#{{ issue.short_uuid }}</a> has been successfully created.
+        </div>
+    </div>
+</div>

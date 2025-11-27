@@ -23,7 +23,7 @@ class ComprehensiveViewTest(TestCase):
 
         # Configure LLM settings
         settings = IssueCaptureSettings.get_solo()
-        settings.llm_enabled = True
+        settings.show_ai_interface = True
         settings.llm_api_key = "test-key-123"
         settings.llm_model = "gpt-4o-mini"
         settings.save()
