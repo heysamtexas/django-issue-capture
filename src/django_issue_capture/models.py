@@ -176,6 +176,10 @@ class IssueCaptureSettings(SingletonModel):
 
     # Feature toggle
     enabled = models.BooleanField(default=True, help_text="Enable issue capture floating button for staff/superusers")
+    staff_only = models.BooleanField(
+        default=True,
+        help_text="If True, only staff/superusers see the issue button. If False, all authenticated users see it.",
+    )
 
     # GitHub integration (REQUIRED for promotion)
     github_repo = models.CharField(

@@ -1,9 +1,9 @@
 {# Removed thumbnail_url - not needed for issue capture #}
 
-<!-- Issue Capture Button (Only for Staff/Superusers) -->
+<!-- Issue Capture Button -->
 {% if issue_capture_enabled %}
     {% if user.is_authenticated %}
-        {% if user.is_staff or user.is_superuser %}
+        {% if not issue_capture_staff_only or user.is_staff or user.is_superuser %}
 <div class="position-fixed" style="bottom: 20px; right: 20px; z-index: 1050;">
     <button type="button"
             class="btn btn-danger btn-lg rounded-circle shadow"

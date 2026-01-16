@@ -117,7 +117,7 @@ class IssueAdmin(admin.ModelAdmin):
 @admin.register(IssueCaptureSettings)
 class IssueCaptureSettingsAdmin(SingletonModelAdmin):
     fieldsets = [
-        ("Feature Toggle", {"fields": ["enabled"]}),
+        ("Feature Toggle", {"fields": ["enabled", "staff_only"]}),
         (
             "LLM Configuration",
             {

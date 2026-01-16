@@ -6,5 +6,6 @@ def issue_capture_settings(request):  # noqa: ARG001
     settings = IssueCaptureSettings.get_solo()
     return {
         "issue_capture_enabled": settings.enabled,
+        "issue_capture_staff_only": settings.staff_only,
         "issue_capture_settings": settings,
     }

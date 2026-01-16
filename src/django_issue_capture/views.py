@@ -8,23 +8,33 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
 
 from .llm_service import IssueLLMService
-from .models import Issue, IssueTemplate
+from .models import Issue, IssueCaptureSettings, IssueTemplate
 
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
 
-def _check_staff_permissions(user: User) -> bool:
-    """Check if user has staff or superuser permissions."""
-    return user.is_authenticated and (user.is_staff or user.is_superuser)
+def _check_permissions(user: User) -> bool:
+    """Check if user has permission to access issue capture features.
+
+    Permission depends on the staff_only setting:
+    - staff_only=True: Only staff/superusers can access
+    - staff_only=False: All authenticated users can access
+    """
+    if not user.is_authenticated:
+        return False
+    settings = IssueCaptureSettings.get_solo()
+    if not settings.staff_only:
+        return True  # All authenticated users allowed
+    return user.is_staff or user.is_superuser
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
 def create_issue(request: HttpRequest) -> HttpResponse:
     """Create a new issue via HTMX form."""
-    if not _check_staff_permissions(request.user):
+    if not _check_permissions(request.user):
         return HttpResponse(status=403)
 
     if request.method == "GET":
@@ -111,7 +121,7 @@ def create_issue(request: HttpRequest) -> HttpResponse:
 @login_required
 def issue_detail(request: HttpRequest, short_uuid: str) -> HttpResponse:
     """View issue details (staff/superuser only)."""
-    if not _check_staff_permissions(request.user):
+    if not _check_permissions(request.user):
         return HttpResponse(status=403)
 
     issue = get_object_or_404(Issue, short_uuid=short_uuid)
@@ -121,7 +131,7 @@ def issue_detail(request: HttpRequest, short_uuid: str) -> HttpResponse:
 @login_required
 def issue_list(request: HttpRequest) -> HttpResponse:
     """List all issues (staff/superuser only)."""
-    if not _check_staff_permissions(request.user):
+    if not _check_permissions(request.user):
         return HttpResponse(status=403)
 
     issues = Issue.objects.select_related("reported_by", "assigned_to").all()
@@ -146,7 +156,7 @@ def issue_list(request: HttpRequest) -> HttpResponse:
 @require_http_methods(["POST"])
 def generate_comprehensive_issue(request: HttpRequest) -> HttpResponse:
     """Generate a comprehensive issue using single-shot LLM generation."""
-    if not _check_staff_permissions(request.user):
+    if not _check_permissions(request.user):
         return HttpResponse(status=403)
 
     title = request.POST.get("title", "").strip()
@@ -199,7 +209,7 @@ def generate_comprehensive_issue(request: HttpRequest) -> HttpResponse:
 @require_http_methods(["POST"])
 def quick_enhance_issue(request: HttpRequest) -> HttpResponse:
     """Quick enhance an issue using LLM (legacy mode - redirects to comprehensive generation)."""
-    if not _check_staff_permissions(request.user):
+    if not _check_permissions(request.user):
         return HttpResponse(status=403)
 
     # Redirect to the new comprehensive generation
