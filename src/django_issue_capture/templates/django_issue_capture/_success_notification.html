@@ -9,7 +9,11 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
         </div>
         <div class="toast-body">
-            Issue <a href="{{ issue.get_absolute_url }}">#{{ issue.short_uuid }}</a> has been successfully created.
+            {% if request.user.is_staff %}
+                Issue <a href="{{ issue.get_absolute_url }}">#{{ issue.short_uuid }}</a> has been successfully created.
+            {% else %}
+                Your issue has been successfully submitted. Thank you!
+            {% endif %}
         </div>
     </div>
 </div>

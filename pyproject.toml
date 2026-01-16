@@ -1,6 +1,6 @@
 [project]
 name = "django-issue-capture"
-version = "0.2.0"
+version = "0.2.1"
 description = "AI-powered GitHub issue creation and management system for Django with conversational UX and LLM enhancement"
 authors = [
     { name = "Directory Platform Team" }
